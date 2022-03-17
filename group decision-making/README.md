@@ -3,4 +3,5 @@ The codes contains analysis from model-free to model-based, including codes gene
 
 
 The Behavioral data and a complete set of model fitting results are stored in OSF:
+
 You can get access to the data as well as download the codes to replicate our results or analyze with some new explorations.
