@@ -12,4 +12,4 @@ In the model fitting codes, we use Variational Bayesian Approach (VBA toolbox) t
 It is notable that our fitting codes also adopt IGT toolbox developed by Romain Ligneul (2019) to run our model fitting and post-fitting analysis more efficiently. We write our own custom model codes within the framework of IGT toolbox. If you are interested, you could visit:https://github.com/romainligneul/igt-toolbox.
 
 
-Any technical questions are welcomed to contact: hanboxie1997@email.arizona.edu.
+Any technical questions are welcomed to contact: hanboxie1997@arizona.edu.
