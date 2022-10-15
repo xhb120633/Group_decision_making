@@ -9,6 +9,8 @@
 %%reformat the preprocessed data for model fitting
 clear all;
 clc;
+%%%
+
 %individual_data
 load('individual_data.mat');
 data=individual_i_data;
@@ -26,7 +28,7 @@ for i=1:length(id_list)
     reformat_data{i}.win=tmp_data(:,7);
     reformat_data{i}.lose=tmp_data(:,8);
     reformat_data{i}.rt=tmp_data(:,4);
-    reformat_data{i}.total_score=sum(data{i}.win+data{i}.lose);
+    reformat_data{i}.total_score=sum(reformat_data{i}.win+reformat_data{i}.lose);
 end
 individual_data=reformat_data;
 
@@ -36,8 +38,11 @@ load('no_leader_data.mat');
 data=no_leader_data;
 clear no_leader_data;
 id_list=unique(data(:,1));
-%%pick data according to their sub_id
+
+%%%%%%%%%%%%%%%%%pick data according to their sub_id
 id_list=id_list(find(id_list<2000));%by setting the standard, you can get the split of seperate conditions of data, just modify the code and get the data you want
+%%%%%%%
+
 reformat_data=cell(length(id_list),1);
 for i=1:length(id_list)
     tmp_data=data(find(data(:,1)==id_list(i)),:);
@@ -51,7 +56,7 @@ for i=1:length(id_list)
     reformat_data{i}.win=tmp_data(:,7);
     reformat_data{i}.lose=tmp_data(:,8);
     reformat_data{i}.rt=tmp_data(:,4);
-    reformat_data{i}.total_score=sum(data{i}.win+data{i}.lose);
+    reformat_data{i}.total_score=sum(reformat_data{i}.win+reformat_data{i}.lose);
     
     if mod(id_list(i),4)==0
         reformat_data{i}.social_number=tmp_data(:,14:17);
@@ -71,8 +76,11 @@ load('leader_data.mat');
 data=leader_data;
 clear leader_data;
 id_list=unique(data(:,1));
-%%pick data according to their sub_id
+
+%%%%%%%%%%%%%%%%%%%%pick data according to their sub_id
 id_list=id_list(find(id_list<4000));%by setting the standard, you can get the split of seperate conditions of data, just modify the code and get the data you want
+%%%%%%%%%%%%%%%
+
 reformat_data=cell(length(id_list),1);
 for i=1:length(id_list)
     tmp_data=data(find(data(:,1)==id_list(i)),:);
@@ -86,7 +94,7 @@ for i=1:length(id_list)
     reformat_data{i}.win=tmp_data(:,7);
     reformat_data{i}.lose=tmp_data(:,8);
     reformat_data{i}.rt=tmp_data(:,4);
-    reformat_data{i}.total_score=sum(data{i}.win+data{i}.lose);
+    reformat_data{i}.total_score=sum(reformat_data{i}.win+reformat_data{i}.lose);
     
     if mod(id_list(i),4)==0
         reformat_data{i}.social_number=tmp_data(:,17:20);
@@ -101,6 +109,12 @@ end
 group_leaderL_data=reformat_data;
 %group_mixL_data=reformat_data;
 
-%%note: to finally run the code IGTtoolbox2_Fitmodels.m, you should save
-%%the data nanming 'data', and save in the ~IGTdata/ fold. Or you can
-%%modift the fitting code with your own preferred routine to read the file.
+%%note: to finally run the code IGTtoolbox2_Fitmodels.m, you should:
+%1. name your intended variable (e.g., group_leader_L_data) as data (which means run
+%the code as data = group_leader_L_data;)
+%2. save the variable 'data' as a file in the model fitting directory
+%(where the model fitting scripts you save) and name the file as
+%'IGTdata.mat'
+%3. run the model fitting script (there will be steps guide you to the
+%directory of the data)
+%%Or you can modift the fitting code with your own preferred routine to read the file.
