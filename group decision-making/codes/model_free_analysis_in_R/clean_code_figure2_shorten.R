@@ -249,10 +249,15 @@ TukeyHSD(aov_group)
 emmeans(aov_group,pairwise~Group)
 t_to_d(3.769, 153)
 
-t.test(subset(group_standard_score,Group=='Individual')$score,subset(group_standard_score,Group=='Control')$score)
-t.test(subset(group_standard_score,Group=='Individual')$score,subset(group_standard_score,Group=='Discuss')$score)
-t.test(subset(group_standard_score,Group=='Individual')$score,subset(group_standard_score,Group=='Leader')$score)
-t.test(subset(group_standard_score,Group=='Individual')$score,subset(group_standard_score,Group=='Mix')$score)
+tmp_t1<-t.test(subset(group_standard_score,Group=='Individual')$score,subset(group_standard_score,Group=='Control')$score)
+tmp_t2<-t.test(subset(group_standard_score,Group=='Individual')$score,subset(group_standard_score,Group=='Discuss')$score)
+tmp_t3<-t.test(subset(group_standard_score,Group=='Individual')$score,subset(group_standard_score,Group=='Leader')$score)
+tmp_t4<-t.test(subset(group_standard_score,Group=='Individual')$score,subset(group_standard_score,Group=='Mix')$score)
+
+p<-c(tmp_t1$p.value,tmp_t2$p.value,tmp_t3$p.value,tmp_t4$p.value)
+
+p.adjust(p,method = 'bonferroni')
+
 
 t_to_d(3.58, 51)
 t_to_d(-2.62, 67)
