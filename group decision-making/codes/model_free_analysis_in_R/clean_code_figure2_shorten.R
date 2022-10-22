@@ -495,7 +495,7 @@ plot_raw_data$reward<-as.factor(plot_raw_data$reward)
 plot_raw_data$inconsistence<-as.factor(plot_raw_data$inconsistence)  
 
 #no leader no discussion (to obtain other groups of plot, simply modify the subset setting)
-tmp_data=subset(plot_raw_data,leader==0&discuss==1)
+tmp_data=subset(plot_raw_data,leader==1&discuss==1)
 ggplot(data=tmp_data,aes(fill=reward))+
   geom_boxplot(aes(x=inconsistence,y=stay),size=1,notch = TRUE)+
   scale_fill_manual(values=c('#b2df8a','#1f78b4'))+
@@ -551,12 +551,12 @@ print(OR)
     scale_x_discrete(labels=c('Stay','Switch'))+
     pic_theme
  
-   t.test(subset(tmp_data,Type==0)$Probability,subset(tmp_data,Type==1)$Probability)
+   t.test(subset(tmp_data,Type==0)$Probability,subset(tmp_data,Type==1)$Probability,paired = T)
    
-   t_to_d(12.306,308)
-   t_to_d(18.431,278)
-   t_to_d(16.303,246)
-   t_to_d(14.802,222)
+   t_to_d(8.702,154)
+   t_to_d(13.033,139)
+   t_to_d(11.528,123)
+   t_to_d(10.467,111)
 ##leader inconsistence ratio vs. consistence ratio
    
    plot_raw_data3<-subset(i_data_new,leader_choose_stay!=-1)
@@ -577,7 +577,7 @@ print(OR)
      scale_x_discrete(labels=c('Stay','Switch'))+
      pic_theme
    
-   t.test(subset(tmp_data,Type==0)$Probability,subset(tmp_data,Type==1)$Probability)
+   t.test(subset(tmp_data,Type==0)$Probability,subset(tmp_data,Type==1)$Probability,paired = T)
    
-   t_to_d(10.818,60)
-   t_to_d(11.272,54)
+   t_to_d(7.650,30)
+   t_to_d(7.970,27)
