@@ -1,4 +1,6 @@
-##code for figure2
+##model free analysis for effect of social influence and individual-group inconsistence
+library(lmerTest)
+library(MASS)
 library(ggplot2)
 library(ggpubr)
 library(RColorBrewer)
@@ -11,6 +13,8 @@ library(plyr)
 library(overlapping)
 library(lattice)
 library(HDInterval)
+library(effectsize)
+library(psych)
 ## the theme for plotting 
 pic_theme <- theme(axis.title = element_text(face="bold", size = 45),
                    axis.text = element_text(face="bold", size = 42),
@@ -131,8 +135,26 @@ cal_block_performance<-function(individual_performance){
   return(block_performance)
 }
 
+cal_ss<-function(c){
+  ss<-rep(0,10)
+  for (i in 1:10){
+    tmp_data=c[(10*(i-1)+1):(10*i)]
+    n_d=length(which(tmp_data==11|tmp_data==12))
+    n_a=length(which(tmp_data==13|tmp_data==14))
+    ss[i]=n_a-n_d
+    if(n_a+n_d!=10){
+      break
+    }
+  }
+  ss<-data.frame(c(1:10),ss)
+  return(ss)
+}
+
+##########begin analyze
+
 group_standard_score=c()
 for(i in 1:dim(group_tag)[1]){
+  sub_id=group_tag[i,1]
   if(sub_id<3000){
     if(sub_id<2000){
       discuss=0
@@ -148,7 +170,6 @@ for(i in 1:dim(group_tag)[1]){
       discuss=1
     }
   }
-  sub_id=group_tag[i,1]
   tmp_data=no_leader_data[which(no_leader_data[,1]==sub_id),]
   tmp_score=sum(cal_ss(tmp_data[,13])$ss)
   group_standard_score<-rbind(group_standard_score,c(sub_id,tmp_score,discuss,leader))
@@ -174,23 +195,23 @@ individual_ss$leader<-as.factor(individual_ss$leader)
 group_standard_score<-rbind(individual_ss,group_standard_score)
 
 summary_group_standard_score<-data.frame(aggregate(.~discuss+leader,FUN='mean',data=group_standard_score)[,c(1,2,4)],(aggregate(.~discuss+leader,FUN='sd',data=group_standard_score))[4])
-n<-c(39,31,28,32,28)
+n<-c(39,31,28,31,28)
 colnames(summary_group_standard_score)[c(3,4)]=c('mean','se')
 summary_group_standard_score$se<-summary_group_standard_score$se/sqrt(n)
 
 #plot figure 2a
 Figure_2a <-
-  ggplot(data = summary_group_standard_score, aes(x = discuss,y=mean)) + 
-  #scale_fill_manual(values=c('#fb9a99','#33a02c','#1f78b4'),labels=c("Individual","No Leader","Leader"))+
-  #geom_col(width =c(0.4/2,rep(0.4,4)), position = position_dodge(width = 0.45),alpha=0.6)+
-  geom_boxplot(data=subset(group_standard_score,discuss==-1),aes(x=discuss,y=score,color=leader,fill=NULL), width=0.35,alpha=1,size=1)+
-  geom_boxplot(data=subset(group_standard_score,discuss!=-1),aes(x=discuss,y=score,color=leader,fill=NULL), width=0.7,position = position_dodge(width = 0.8),alpha=1,size=1)+
-  geom_point(data=group_standard_score,aes(x=discuss,y=score,group=leader,color=leader),position = position_jitterdodge(dodge.width = 0.8,jitter.width = 0.2),alpha=0.5,size=6)+
-  #geom_errorbar(position = position_dodge(width = 0.8),aes(x=discuss,ymin=mean-se,ymax=mean+se,group=leader,color=leader),size=1,alpha=1,width=c(0.06,rep(0.12,4)))+
-  #geom_point(data = summary_group_standard_score, aes(x = discuss,y=mean,color=leader),size=6,position = position_dodge(width = 0.8))+
+  ggplot(data = summary_group_standard_score, aes(x = discuss,y=mean,fill=leader,group=leader)) + 
+  scale_fill_manual(values=c('#808080','#91bfdb','#fc8d59'),labels=c("Individual","No Leader","Leader"))+
+  geom_col(width =c(0.4/2,rep(0.4,4)), position = position_dodge(width = 0.45),alpha=1)+
+  #geom_boxplot(data=subset(group_standard_score,discuss==-1),aes(x=discuss,y=score,color=leader,fill=NULL), width=0.35,alpha=1,size=1)+
+  #geom_boxplot(data=subset(group_standard_score,discuss!=-1),aes(x=discuss,y=score,color=leader,fill=NULL), width=0.7,position = position_dodge(width = 0.8),alpha=1,size=1)+
+  geom_point(data=group_standard_score,aes(x=discuss,y=score,group=leader,color=leader),position = position_jitterdodge(dodge.width = 0.45,jitter.width = 0.2),alpha=0.4,size=6)+
+  #geom_point(data = summary_group_standard_score, aes(x = discuss,y=mean,color=leader),size=6,position = position_dodge(width = 0.45))+
+  geom_errorbar(position = position_dodge(width = 0.45),aes(x=discuss,ymin=mean-se,ymax=mean+se,group=leader),size=1,alpha=1,width=c(0.06,rep(0.12,4)))+
   scale_x_discrete("Discussion", labels = c("-1" = "Individual","0" = "No Discussion", "1" = "Discussion")) +
   scale_y_continuous(expand = c(0,0))+
-  scale_color_manual(values=c('#fb9a99','#33a02c','#1f78b4'),labels=c("Individual","No Leader","Leader"))+
+  scale_color_manual(values=c('#808080','#91bfdb','#fc8d59'),labels=c("Individual","No Leader","Leader"))+
   labs(x='Discussion Condition',y = "Group Standard Score",fill=c('Group')) +
   pic_theme+
   theme(legend.position = c(0.88, 0.10),
@@ -198,6 +219,11 @@ Figure_2a <-
 
 #figure 2a group comparison
 aov1<-aov(score~discuss*leader,data=subset(group_standard_score,discuss!=-1))
+eta_squared(aov1, partial = T)
+#leader effect size
+t_to_d(-2.163,115)
+#communication effect size
+t_to_d(-4.965,115)
 #figure 2a group-independent individual comparison
 group_list<-c()
 for(g in 1:dim(group_standard_score)[1]){
@@ -218,35 +244,27 @@ group_standard_score<-data.frame(group_standard_score,group_list)
 colnames(group_standard_score)[5]='Group'
 
 aov_group<-aov(score~Group,data=group_standard_score)
+eta_squared(aov_group, partial = T)
 TukeyHSD(aov_group)
 emmeans(aov_group,pairwise~Group)
-##figure 2b data
-group_block_standard_score<-c()
-for (g in 1:dim(group_tag)[1]){
-  sub_id=group_tag[g,1]
-  tmp_data=no_leader_data[which(no_leader_data[,1]==sub_id),]
-  tmp_score=as.numeric(cal_ss(tmp_data[,13])$ss)
-  discuss<-group_class(sub_id)[1]
-  leader<-group_class(sub_id)[2]
-  group_block_standard_score<-rbind(group_block_standard_score,data.frame(rep(sub_id,10),c(1:10),tmp_score,rep(discuss,10),rep(leader,10)))
-}
-colnames(group_block_standard_score)<-c('sub_id','block','group_performance','discuss','leader')
-group_block_standard_score$discuss<-as.factor(group_block_standard_score$discuss)
-group_block_standard_score$leader<-as.factor(group_block_standard_score$leader)
-group_block_standard_score$block<-as.numeric(group_block_standard_score$block)
-#lm fitting and post-hoc comparison 
-group_lm1<-lm(group_performance~block*discuss*leader,data=group_block_standard_score)
-group_lm2<-lm(group_performance~(block+I(block^2))*discuss*leader,data=group_block_standard_score)
+t_to_d(3.769, 153)
 
-group_lm1<-aov(group_performance~block*discuss*leader,data=group_block_standard_score)
-group_block_standard_score$block<-as.factor(group_block_standard_score$block)
-summary(aov(group_performance~block*discuss*leader,data=group_block_standard_score))
-anova(group_lm1)
-emmeans(group_lm1,pairwise~discuss|block)
-emmeans(group_lm1,pairwise~leader|block)
+tmp_t1<-t.test(subset(group_standard_score,Group=='Individual')$score,subset(group_standard_score,Group=='Control')$score)
+tmp_t2<-t.test(subset(group_standard_score,Group=='Individual')$score,subset(group_standard_score,Group=='Discuss')$score)
+tmp_t3<-t.test(subset(group_standard_score,Group=='Individual')$score,subset(group_standard_score,Group=='Leader')$score)
+tmp_t4<-t.test(subset(group_standard_score,Group=='Individual')$score,subset(group_standard_score,Group=='Mix')$score)
+
+p<-c(tmp_t1$p.value,tmp_t2$p.value,tmp_t3$p.value,tmp_t4$p.value)
+
+p.adjust(p,method = 'bonferroni')
 
 
-#plot figure 2b
+t_to_d(3.58, 51)
+t_to_d(-2.62, 67)
+t_to_d(-0.41, 59)
+t_to_d(1.17, 55)
+
+#####################figure 2b individual performance
 individual_block_standard_score<-c()
 for (i in 1:length(individual_tag)){
   sub_id=individual_tag[i]
@@ -256,24 +274,7 @@ for (i in 1:length(individual_tag)){
 }
 colnames(individual_block_standard_score)<-c('sub_id','block','group_performance','discuss','leader')
 
-group_block_standard_score<-rbind(individual_block_standard_score,group_block_standard_score)
 
-group_block_mean_score<-aggregate(group_performance~block+discuss+leader,mean,data=group_block_standard_score)
-
-Figure2b<-
-  ggplot(data = group_block_mean_score, aes(x = block,y = group_performance)) + 
-  geom_line(aes(color=leader, linetype=discuss),size=1.5,alpha=1)+
-  geom_point(aes(color=leader,shape=discuss),size=3)+guides(shape=FALSE)+
-  scale_linetype_manual(values=c('solid','dashed','solid'),labels = c("-1" = "Individual","0" = "No Discussion", "1" = "Discussion"))+
-  scale_color_manual(values=c('#fb9a99','#33a02c','#1f78b4'),labels=c("Individual","No Leader","Leader"))+
-  scale_x_continuous( breaks=seq(0, 10, 2))+
-  scale_y_continuous( breaks=seq(-6, 6, 3))+
-  labs(x='Block',y = "Standard Score") +
-  pic_theme+
-  theme(legend.position = c(0.88, 0.30),
-        legend.title=element_blank())
-
-##Figure 2d individual standard score 
 group_individual_block_standard_score<-c()
 for (g in 1:dim(group_tag)[1]){
   for (i in 1:5){
@@ -306,18 +307,6 @@ group_individual_block_standard_score<-rbind(individual_block_standard_score,gro
 
 individual_block_standard_score<-aggregate(.~block+discuss+leader,mean,data=group_individual_block_standard_score)
 
-##plot figure2d
-ggplot(data = individual_block_standard_score, aes(x = block,y = individual_performance)) + 
-  geom_line(aes(color=leader, linetype=discuss),size=1.5,alpha=1)+
-  scale_linetype_manual(values=c('solid','dashed','solid'),labels = c("-1" = "Individual","0" = "No Discussion", "1" = "Discussion"))+
-  scale_color_manual(values=c('#fb9a99','#33a02c','#a6cee3','#1f78b4'),labels=c("-1" = "Individual","0" = "No Leader", "1" = "Non-leading Member",'2'='Leader'))+
-  scale_x_continuous( breaks=seq(0, 10, 2))+
-  #scale_y_continuous( breaks=seq(-6, 6, 3))+
-  labs(x='Block',y = "Earned Score") +
-  pic_theme+
-  theme(legend.position = c(0.88, 0.30),
-        legend.title=element_blank())
-
 tmp_group_individual_block_standard_score<-subset(group_individual_block_standard_score,leader!=-1)
 
 for (g in 1:dim(group_tag)[1]){
@@ -330,36 +319,25 @@ for (g in 1:dim(group_tag)[1]){
 }
 colnames(tmp_group_individual_block_standard_score)[4]='group_id'
 
-##lm fitting and post-hoc comparison
-block_score_lm<-lmer(individual_performance~block*discuss*leader+(1|sub_id)+(1|group_id),data=tmp_group_individual_block_standard_score,contrasts=list(discuss=c(-1,1), leader=cbind(c(0,-1,1),c(-1,0,1))))
-anova(block_score_lm)
-emmeans(block_score_lm,pairwise~discuss|block)
-emmeans(block_score_lm,pairwise~leader|block,p.adjust.methods='bonf')
 
-block_score_aov<-aov(individual_performance~block*discuss*leader,data=tmp_group_individual_block_standard_score)
-emmeans(block_score_aov,pairwise~discuss|block)
-emmeans(block_score_aov,pairwise~leader|block,p.adjust.methods='bonf')
-
-
-##fig 2c
 group_standard_score<-aggregate(.~sub_id+leader+discuss,FUN='sum',data=group_individual_block_standard_score)
+group_standard_score<-subset(group_standard_score,leader!=-1)
 
 summary_individual_virtual_performance<-data.frame(aggregate(.~discuss+leader,FUN='mean',data=group_standard_score[,c(1,2,3,5)]),(aggregate(.~discuss+leader,FUN='sd',data=group_standard_score))[5])
-n<-c(39,155,140,128,112,32,28)
+n<-c(155,140,124,112,31,28)
 colnames(summary_individual_virtual_performance)[c(4,5)]=c('mean','se')
 summary_individual_virtual_performance$se<-summary_individual_virtual_performance$se/sqrt(n)
 
-Figure2e<-
-  ggplot(data = summary_individual_virtual_performance, aes(x = discuss,y=mean)) +  
-  #scale_fill_manual(values=c('#fb9a99','#33a02c','#a6cee3','#1f78b4'),labels=c('Individual',"No Leader","Non-Leading Member","Leader"))+
-  geom_violin(data=subset(group_standard_score,discuss==-1),aes(x=discuss,y=individual_performance,color=leader,fill=NULL), width=0.2,alpha=1,size=1)+
-  geom_violin(data=subset(group_standard_score,discuss!=-1),aes(x=discuss,y=individual_performance,color=leader,fill=NULL), width=0.6,position = position_dodge(width = 0.8),alpha=1,size=1)+
-  geom_point(data=group_standard_score,aes(x=discuss,y=individual_performance,group=leader,color=leader),position = position_jitterdodge(dodge.width = 0.8,jitter.width =0.2 ),alpha=0.4,size=6)+guides(color=FALSE)+
-  geom_errorbar(position = position_dodge(width = 0.8),aes(x=discuss,ymin=mean-se,ymax=mean+se,group=leader),size=1.2,alpha=1,width=0.1)+
-  geom_point(position = position_dodge(width = 0.8),aes(x=discuss,y=mean,group=leader),size=6,alpha=1)+
-  scale_x_discrete( labels = c('-1'='Individual',"0" = "No Discussion", "1" = "Discussion"))+
+Figure2b<-
+  ggplot(data = summary_individual_virtual_performance, aes(x = discuss,y=mean,fill=leader,group=leader)) +  
+  scale_fill_manual(values=c('#91bfdb','#A8D5BA','#fc8d59'),labels=c("No Leader","Non-Leading Member","Leader"))+
+  geom_col(width =c(rep(0.4,6)),position = position_dodge(width = 0.55),alpha=1,size=1)+
+  geom_point(data=group_standard_score,aes(x=discuss,y=individual_performance,group=leader,color=leader),position = position_jitterdodge(dodge.width = 0.55,jitter.width =0.08 ),alpha=0.4,size=6)+guides(color='none')+
+  geom_errorbar(position = position_dodge(width = 0.55),aes(x=discuss,ymin=mean-se,ymax=mean+se,group=leader),size=1.2,alpha=1,width =c(rep(0.2,6)))+
+  #geom_point(position = position_dodge(width = 0.8),aes(x=discuss,y=mean,group=leader),size=6,alpha=1)+
+  scale_x_discrete( labels = c("0" = "No Discussion", "1" = "Discussion"))+
   scale_y_continuous(expand = c(0,0))+
-  scale_color_manual(values=c('#fb9a99','#33a02c','#a6cee3','#1f78b4'))+
+  scale_color_manual(values=c('#91bfdb','#A8D5BA','#fc8d59'))+
   labs(y = "Individual Standard Score",fill=c('Group')) +
   pic_theme+
   theme(legend.title=element_blank(),legend.position = c(0.8, 0.2))
@@ -367,199 +345,358 @@ Figure2e<-
 ##use lm to comppare 
 tmp_group_standard_score<-subset(group_standard_score,leader!=-1)
 
-for (g in 1:dim(group_tag)[1]){
-  id_list<-group_tag[g,]
-  loc<-c()
-  for(i in 1:5){
-    loc<-c(loc,which(tmp_group_standard_score[,1]==id_list[i]))
-  }
-  tmp_group_standard_score[loc,]$block<-g
-}
-colnames(tmp_group_standard_score)[4]='group_id'
-
-tmp_group_standard_score$leader<-as.factor(tmp_group_standard_score$leader)
-tmp_group_standard_score$discuss<-as.factor(tmp_group_standard_score$discuss)
-
-contrasts(tmp_group_standard_score$leader)<-cbind(c(1,0,-1),c(0,1,-1))
-contrasts(tmp_group_standard_score$discuss)<-c(-1,1)
-
-
-individual_performance_lm<-lmer(individual_performance~discuss*leader+(1|group_id),data=tmp_group_standard_score)
-anova(individual_performance_lm)
-emmeans(individual_performance_lm,pairwise~leader)
-emmeans(individual_performance_lm,pairwise~discuss)
+# for (g in 1:dim(group_tag)[1]){
+#   id_list<-group_tag[g,]
+#   loc<-c()
+#   for(i in 1:5){
+#     loc<-c(loc,which(tmp_group_standard_score[,1]==id_list[i]))
+#   }
+#   tmp_group_standard_score[loc,]$block<-g
+# }
+# colnames(tmp_group_standard_score)[4]='group_id'
+# 
+# tmp_group_standard_score$leader<-as.factor(tmp_group_standard_score$leader)
+# tmp_group_standard_score$discuss<-as.factor(tmp_group_standard_score$discuss)
+# 
+# contrasts(tmp_group_standard_score$leader)<-cbind(c(1,0,-1),c(0,1,-1))
+# contrasts(tmp_group_standard_score$discuss)<-c(-1,1)
+# 
+# 
+# individual_performance_lm<-lmer(individual_performance~discuss*leader+(1|group_id),data=tmp_group_standard_score)
+# anova(individual_performance_lm)
+# emmeans(individual_performance_lm,pairwise~leader)
+# emmeans(individual_performance_lm,pairwise~discuss)
 
 individual_performance_aov<-aov(individual_performance~discuss*leader,data=tmp_group_standard_score)
+TukeyHSD(individual_performance_aov)
+emmeans(individual_performance_aov,pairwise~leader)
+t_to_d(2.318,584)
+eta_squared(individual_performance_aov, partial = T)
+
 summary(individual_performance_aov)
 emmeans(individual_performance_aov,pairwise~leader)
 emmeans(individual_performance_aov,pairwise~discuss)
-####boostrap correlation
-boostrap_matrix<-matrix(rep(-1,595000),nrow=119,ncol=5000)
-#random id
-for (g in 1:dim(boostrap_matrix)[1]){
-  if(g<60){
-    boostrap_matrix[g,]=sample(c(1:5),5000,replace=T)
-  }else{
-    boostrap_matrix[g,]=sample(c(1:4),5000,replace=T)
+
+
+#prepare the data for each trial for model-free analysis in Figure 2c
+#no leader data part
+i_data_new<-c()
+no_leader_id_list<-unique(no_leader_data[,1])
+for (i in 1:length(no_leader_id_list)){
+  tmp_id=no_leader_id_list[i]
+  tmp_data<-no_leader_data[which(no_leader_data[,1]==tmp_id),]
+  discuss=group_individual_class(tmp_id,4)[1]
+  leader=group_individual_class(tmp_id,4)[2]
+  tmp_i_data<-c()
+  for (t in 2:100){
+    stay=as.numeric(tmp_data[t-1,11]==tmp_data[t,11])
+    reward=tmp_data[t-1,9]/100
+    reward=as.numeric(reward>0)
+    social_number=tmp_data[t-1,14:17]
+    N=as.numeric(social_number[tmp_data[t-1,3]])
+    inconsistence=as.numeric(tmp_data[t-1,11]!=tmp_data[t-1,13])
+    choose_to_revealed=as.numeric(tmp_data[t,11]==tmp_data[t-1,13])
+    leader_choose_stay=-1
+    tmp_i_data<-rbind(tmp_i_data,data.frame(tmp_id,discuss,leader,stay,reward,N,inconsistence,choose_to_revealed,leader_choose_stay))
   }
+  i_data_new<-rbind(i_data_new,tmp_i_data)
 }
 
-group_boostrap_matrix<-matrix(rep(-1,595000),nrow=119,ncol=5000)
-for (i in 1:5000){
-  group_boostrap_matrix[1:31,i]=sample(c(1:31),31,replace=T)
-  group_boostrap_matrix[32:59,i]=sample(c(32:59),28,replace=T)
-  group_boostrap_matrix[60:91,i]=sample(c(60:91),32,replace=T)
-  group_boostrap_matrix[92:119,i]=sample(c(92:119),28,replace=T)
+#leader data part
+leader_id_list<-unique(leader_data[,1])
+for (i in 1:length(leader_id_list)){
+  tmp_id=leader_id_list[i]
+  tmp_data<-leader_data[which(leader_data[,1]==tmp_id),]
+  discuss=group_individual_class(tmp_id,5)[1]
+  leader=group_individual_class(tmp_id,5)[2]
+  tmp_i_data<-c()
+  for (t in 2:100){
+    stay=as.numeric(tmp_data[t-1,16]==tmp_data[t,16])
+    reward=tmp_data[t-1,9]/100
+    reward=as.numeric(reward>0)
+    social_number=tmp_data[t,17:20]
+    N=as.numeric(social_number[tmp_data[t,3]])
+    inconsistence=-1
+    choose_to_revealed=as.numeric(tmp_data[t,16]==tmp_data[t-1,16])
+    leader_choose_stay<-as.numeric(tmp_data[t,11]==tmp_data[t,16])
+    tmp_i_data<-rbind(tmp_i_data,data.frame(tmp_id,discuss,leader,stay,reward,N,inconsistence,choose_to_revealed,leader_choose_stay))
+  }
+  i_data_new<-rbind(i_data_new,tmp_i_data)
 }
 
-#extract data following boostap matrix
-no_leader_nd_r<-c()
-no_leader_d_r<-c()
-non_leading_nd_r<-c()
-non_leading_d_r<-c()
-leader_leading_nd_r<-c()
-leader_leading_d_r<-c()
-for (i in 1:5000){
-  tmp_data<-c()
-  for (ig in 1:119){
-    g=group_boostrap_matrix[ig,i]
-    if(g<60){
-      s=boostrap_matrix[g,i]
-      sub_id=group_tag[g,s]
-      tmp_data<-rbind(tmp_data,group_standard_score[which(group_standard_score[,1]==sub_id),])
-    }else{
-      s=boostrap_matrix[g,i]
-      sub_id=group_tag[g,s]
-      tmp_data<-rbind(tmp_data,group_standard_score[which(group_standard_score[,1]==sub_id),])
-      sub_id=group_tag[g,5]
-      tmp_data<-rbind(tmp_data,group_standard_score[which(group_standard_score[,1]==sub_id),])
+##plot the social influence-reward stay probabiliy
+##plot social influence*reward stay/switch probability
+plot_raw_data<-aggregate(.~leader+discuss+N+reward,FUN = 'mean',data = i_data_new)
+plot_raw_data_sd<-aggregate(.~leader+discuss+N+reward,FUN = 'sd',data = i_data_new)
+tmp_n<-aggregate(.~leader+discuss+N+reward,FUN = 'table',data = i_data_new)$stay
+tmp_n<-apply(tmp_n,FUN='sum',1)
+plot_raw_data<-data.frame(plot_raw_data[,c(1,2,3,4,6)],plot_raw_data_sd[,6])
+colnames(plot_raw_data)[c(5,6)]<-c('stay_mean','stay_se')
+plot_raw_data$stay_se<-plot_raw_data$stay_se/sqrt(tmp_n)
+
+plot_raw_data$leader<-as.factor(plot_raw_data$leader)
+plot_raw_data$discuss<-as.factor(plot_raw_data$discuss)
+plot_raw_data$reward<-as.factor(plot_raw_data$reward)
+
+##segment data
+#no leader no discussion (to obtain other groups of plot, simply modify the subset setting)
+tmp_data=subset(plot_raw_data,leader==0&discuss==0)
+Figure2c<-ggplot(data=tmp_data,aes(color=reward,group=reward))+
+  geom_line(aes(x=N,y=stay_mean),size=1)+
+  #scale_x_discrete(labels=c('Loss','Gain'))+
+  #geom_smooth(aes(x=N,y=stay),method='lm',se=F)
+  geom_errorbar(aes(x=N,ymin=stay_mean-stay_se,ymax=stay_mean+stay_se),size=1.2,alpha=1,width=0.1)+
+  scale_color_manual(values=c('#b2df8a','#1f78b4'))+
+  scale_y_continuous(limits = c(0.2,0.8),breaks=seq(0,0.8,0.2))+
+  ylab('Probability of Stay')+
+  pic_theme
+
+#tmp_data<-aggregate(.~leader+discuss+N+reward+tmp_id,FUN = 'mean',data = i_data_new)
+tmp_data<-subset(i_data_new,leader==2&discuss==1)
+tmp_data$reward<-as.factor(tmp_data$reward-0.5)
+tmp_data$N<-scale(tmp_data$N,center = T,scale = F)
+lm_social_reward<-glmer(stay~N*reward+(1|tmp_id),data=tmp_data,family='binomial')
+summary(lm_social_reward)   
+#anova(lm_social_reward)
+# aov_social_reward<-aov(stay~N*reward+Error(tmp_id),data=tmp_data)
+# summary(aov_social_reward)
+# emmeans(aov_social_reward,pairwise~N)
+# emmeans(aov_social_reward,pairwise~reward)    
+# emmeans(aov_social_reward,pairwise~reward|N) 
+# eta_squared(aov_social_reward)
+car::Anova(lm_social_reward,type=3)
+
+confint(lm_social_reward)
+
+tmp_data1<-subset(tmp_data,reward=='0.5')
+tmp_data2<-subset(tmp_data,reward=='-0.5')
+
+lm_social_reward1<-glmer(stay~N+(1|tmp_id),data=tmp_data1,family='binomial')
+summary(lm_social_reward1)
+
+fixcoef <- fixef(lm_social_reward1)
+OR <- exp(fixcoef)
+print(OR)
+
+lm_social_reward2<-glmer(stay~N+(1|tmp_id),data=tmp_data2,family='binomial')
+summary(lm_social_reward2)
+
+fixcoef <- fixef(lm_social_reward2)
+OR <- exp(fixcoef)
+print(OR)
+
+
+##plot the inconsistence-reward stay probabiliy
+##plot social influence*reward stay/switch probability
+plot_raw_data<-aggregate(.~leader+discuss+inconsistence+reward+tmp_id,FUN = 'mean',data = i_data_new)
+
+plot_raw_data$leader<-as.factor(plot_raw_data$leader)
+plot_raw_data$discuss<-as.factor(plot_raw_data$discuss)
+plot_raw_data$reward<-as.factor(plot_raw_data$reward)
+plot_raw_data$inconsistence<-as.factor(plot_raw_data$inconsistence)  
+
+#no leader no discussion (to obtain other groups of plot, simply modify the subset setting)
+tmp_data=subset(plot_raw_data,leader==0&discuss==0)
+Figure2d<-ggplot(data=tmp_data,aes(fill=reward))+
+  geom_boxplot(aes(x=inconsistence,y=stay),size=1,notch = TRUE)+
+  scale_fill_manual(values=c('#b2df8a','#1f78b4'))+
+  ylab('Probability of Stay')+
+  pic_theme
+
+#tmp_data<-aggregate(.~leader+discuss+N+reward+tmp_id,FUN = 'mean',data = i_data_new)
+tmp_data<-subset(i_data_new,leader==0&discuss==0)
+tmp_data$reward<-as.factor(tmp_data$reward-0.5)
+tmp_data$inconsistence<-as.factor(tmp_data$inconsistence-0.5)
+lm_reward_incon<-glmer(stay~inconsistence*reward+(1|tmp_id),data=tmp_data,family = 'binomial')
+summary(lm_reward_incon)
+
+car::Anova(lm_reward_incon,type=3)
+
+confint(lm_reward_incon)
+
+tmp_data1<-subset(tmp_data,reward=='0.5')
+tmp_data2<-subset(tmp_data,reward=='-0.5')
+
+lm_reward_incon1<-glmer(stay~inconsistence+(1|tmp_id),data=tmp_data1,family='binomial')
+summary(lm_reward_incon1)
+
+fixcoef <- fixef(lm_reward_incon1)
+OR <- exp(fixcoef)
+print(OR)
+
+lm_reward_incon2<-glmer(stay~inconsistence+(1|tmp_id),data=tmp_data2,family='binomial')
+summary(lm_reward_incon2)
+
+fixcoef <- fixef(lm_reward_incon2)
+OR <- exp(fixcoef)
+print(OR)
+
+##social influence on exploration (for supplementary figure codes, please see social_influence_on_exploration.R)
+#prepare the data for each trial for model-free analysis
+#members of no leader data part
+i_data_socialexplore <-c()
+no_leader_id_list<-unique(no_leader_data[,1])
+no_leader_id_list<-no_leader_id_list[no_leader_id_list<3000] # members of no leader groups
+for (i in 1:length(no_leader_id_list)){
+  tmp_id=no_leader_id_list[i]
+  tmp_data<-no_leader_data[which(no_leader_data[,1]==tmp_id),]
+  discuss=group_individual_class(tmp_id,4)[1]
+  leader=group_individual_class(tmp_id,4)[2]
+  tmp_i_data<-c()
+  for (t in 2:100){
+    
+    #tmp_four_social <- tmp_data[t-1,14:17]
+    tmp_four_social <- c(tmp_data[t-1,14],tmp_data[t-1,15],tmp_data[t-1,16],tmp_data[t-1,17])
+    first_max <- sort(tmp_four_social,decreasing = T)[1]
+    second_max <- sort(tmp_four_social,decreasing = T)[2]
+    third_max <- sort(tmp_four_social,decreasing = T)[3]
+    forth_max <- sort(tmp_four_social,decreasing = T)[4]
+    first_max_position <- which(tmp_four_social==first_max)
+    second_max_position <- which(tmp_four_social == second_max)
+    third_max_position <- which(tmp_four_social == third_max)
+    forth_max_position <- which(tmp_four_social == forth_max)
+    
+    if(length(first_max_position)==1){
+      if(length(second_max_position)==1){ # 4,1,0,0;3,2,0,0
+        if(tmp_data[t,3]==first_max_position){
+          Highsocial_chose <- -666
+          Lowsocial_chose <- -666
+        }else if(tmp_data[t,3]==second_max_position){
+          Highsocial_chose <- 1
+          Lowsocial_chose <- 0
+        }else if(tmp_data[t,3]==third_max_position[1] | tmp_data[t,3]==forth_max_position[2]){
+          Highsocial_chose <- 0
+          Lowsocial_chose <- 1
+        }
+      }else if(length(second_max_position)==2){ # 3,1,1,0
+        if(tmp_data[t,3]==first_max_position){
+          Highsocial_chose <- -666
+          Lowsocial_chose <- -666
+        }else if(tmp_data[t,3]==second_max_position[1] | tmp_data[t,3]==third_max_position[2]){
+          Highsocial_chose <- 1
+          Lowsocial_chose <- 0
+        }else if(tmp_data[t,3]==forth_max_position){
+          Highsocial_chose <- 0
+          Lowsocial_chose <- 1
+        }
+      }else if(length(second_max_position)==3){ # 5,0,0,0; 2,1,1,1
+        Highsocial_chose <- -666
+        Lowsocial_chose <- -666
+      }
+    }else if(length(first_max_position)==2){  # 2, 2 ,1 ,0; the max may the first 2 or the second 2
+      if(tmp_data[t-1,12]==first_max_position[1]){
+        if(tmp_data[t,3]==first_max_position[1] | tmp_data[t,3]==third_max_position){
+          Highsocial_chose <- -666
+          Lowsocial_chose <- -666
+        }else if(tmp_data[t,3]==first_max_position[2]){
+          Highsocial_chose <- 1
+          Lowsocial_chose <- 0
+        }else if(tmp_data[t,3]==forth_max_position){
+          Highsocial_chose <- 0
+          Lowsocial_chose <- 1
+        }
+      }else if(tmp_data[t-1,12]==first_max_position[2]){
+        if(tmp_data[t,3]==first_max_position[2] | tmp_data[t,3]==third_max_position){
+          Highsocial_chose <- -666
+          Lowsocial_chose <- -666
+        }else if(tmp_data[t,3]==first_max_position[1]){
+          Highsocial_chose <- 1
+          Lowsocial_chose <- 0
+        }else if(tmp_data[t,3]==forth_max_position){
+          Highsocial_chose <- 0
+          Lowsocial_chose <- 1
+        }
+      }  
     }
+    
+    
+    individual_choice = tmp_data[t,3]
+    group_choice_last = tmp_data[t-1,12]
+    social_number_last=tmp_data[t-1,14:17]
+    tmp_i_data<-rbind(tmp_i_data,data.frame(tmp_id,discuss,leader,individual_choice,group_choice_last,social_number_last,Highsocial_chose,Lowsocial_chose))
   }
-  tmp_no_leader_nd_data<-subset(tmp_data,leader==0&discuss==0)
-  tmp_no_leader_d_data<-subset(tmp_data,leader==0&discuss==1)
-  tmp_non_leading_nd_data<-subset(tmp_data,leader==1&discuss==0)
-  tmp_non_leading_d_data<-subset(tmp_data,leader==1&discuss==1)
-  tmp_leader_nd_data<-subset(tmp_data,leader==2&discuss==0)
-  tmp_leader_d_data<-subset(tmp_data,leader==2&discuss==1)
-  
-  tmp_r1<-as.numeric(cor.test(scale(tmp_no_leader_nd_data$individual_performance),scale(tmp_no_leader_nd_data$group_score))$estimate)
-  tmp_r2<-as.numeric(cor.test(scale(tmp_no_leader_d_data$individual_performance),scale(tmp_no_leader_d_data$group_score))$estimate)
-  
-  tmp_r3<-as.numeric(cor.test(scale(tmp_non_leading_nd_data$individual_performance),scale(tmp_non_leading_nd_data$group_score))$estimate)
-  tmp_r4<-as.numeric(cor.test(scale(tmp_non_leading_d_data$individual_performance),scale(tmp_non_leading_d_data$group_score))$estimate)
-  
-  tmp_r5<-as.numeric(cor.test(scale(tmp_leader_nd_data$individual_performance),scale(tmp_leader_nd_data$group_score))$estimate)
-  tmp_r6<-as.numeric(cor.test(scale(tmp_leader_d_data$individual_performance),scale(tmp_leader_d_data$group_score))$estimate)
-  
-  no_leader_nd_r<-c(no_leader_nd_r,tmp_r1)
-  no_leader_d_r<-c(no_leader_d_r,tmp_r2)
-  
-  non_leading_nd_r<-c(non_leading_nd_r,tmp_r3)
-  non_leading_d_r<-c(non_leading_d_r,tmp_r4)
-  
-  leader_leading_nd_r<-c(leader_leading_nd_r,tmp_r5)
-  leader_leading_d_r<-c(leader_leading_d_r,tmp_r6)
+  i_data_socialexplore <-rbind(i_data_socialexplore,tmp_i_data)
 }
 
-
-cocor.dep.groups.overlap(mean(non_leading_r), leader_r, mean(leader_leading_r), 60, alternative = "two.sided",
-                         test = "all", alpha = 0.05, conf.level = 0.95, null.value = 0,
-                         data.name = NULL, var.labels = NULL, return.htest = FALSE)
-
-cocor.indep.groups(mean(non_leading_r), mean(no_leader_r), 240, 295, alternative = "two.sided",
-                   test = "all", alpha = 0.05, conf.level = 0.95, null.value = 0,
-                   data.name = NULL, var.labels = NULL, return.htest = FALSE)
-
-cocor.indep.groups(leader_r, mean(no_leader_r), 60, 295, alternative = "two.sided",
-                   test = "all", alpha = 0.05, conf.level = 0.95, null.value = 0,
-                   data.name = NULL, var.labels = NULL, return.htest = FALSE)
-
-
-cocor.indep.groups(mean(leader_leading_nd_r), mean(leader_leading_d_r), 32, 28, alternative = "two.sided",
-                   test = "all", alpha = 0.05, conf.level = 0.95, null.value = 0,
-                   data.name = NULL, var.labels = NULL, return.htest = FALSE)
+##the effect of social influence on exploration, members of no leader groups
+plot_raw_data2<-subset(i_data_socialexplore,Highsocial_chose!=-666 & Lowsocial_chose!=-666)
+table(plot_raw_data2$Highsocial_chose)
+table(plot_raw_data2$Lowsocial_chose)
+plot_raw_data2<-aggregate(.~tmp_id,FUN = 'mean',data=plot_raw_data2)
+tmp_plot_raw_data2<-data.frame(plot_raw_data2,rep(0,dim(plot_raw_data2)[1]))
+tmp_plot_raw_data2$Highsocial_chose=1-tmp_plot_raw_data2$Highsocial_chose
+plot_raw_data2<-data.frame(plot_raw_data2,rep(1,dim(plot_raw_data2)[1]))
+colnames(plot_raw_data2)[c(10,12)]=c('Probability','Type')
+colnames(tmp_plot_raw_data2)[c(10,12)]=c('Probability','Type')
+plot_raw_data2<-rbind(plot_raw_data2,tmp_plot_raw_data2)
+plot_raw_data2$Type=as.factor(plot_raw_data2$Type)
+#segment data
+#members of no leader groups
+tmp_data<-subset(plot_raw_data2, leader==0&discuss==0) # two conditions: leader==0 & discuss == 0 or 1
 
 
-no_leader_nd_r<-as.data.frame(no_leader_nd_r)
-no_leader_nd_r<-data.frame(no_leader_nd_r,rep(0,5000),rep(0,5000))
-colnames(no_leader_nd_r)<-c('r','discuss','leader')
+Figure2e<-ggplot(data=tmp_data)+
+  geom_point(aes(x=Type,y=Probability),size=10,color='skyblue',alpha=0.8)+
+  geom_line(aes(x=(Type),y=Probability,group=tmp_id),linetype='dashed',size=1,alpha=0.1)+
+  scale_x_discrete(labels=c('Minimum N','Maximum N'))+
+  scale_y_continuous(limits = c(0,1), breaks = seq(0,1,0.25))+
+  ylab("Probablitiy of exploration")+
+  pic_theme
 
-no_leader_d_r<-as.data.frame(no_leader_d_r)
-no_leader_d_r<-data.frame(no_leader_d_r,rep(1,5000),rep(0,5000))
-colnames(no_leader_d_r)<-c('r','discuss','leader')
+t.test(subset(tmp_data,Type==0)$Probability,subset(tmp_data,Type==1)$Probability,paired = T)
 
-non_leading_nd_r<-as.data.frame(non_leading_nd_r)
-non_leading_nd_r<-data.frame(non_leading_nd_r,rep(0,5000),rep(1,5000))
-colnames(non_leading_nd_r)<-c('r','discuss','leader')
-
-non_leading_d_r<-as.data.frame(non_leading_d_r)
-non_leading_d_r<-data.frame(non_leading_d_r,rep(1,5000),rep(1,5000))
-colnames(non_leading_d_r)<-c('r','discuss','leader')
-
-leader_leading_nd_r<-as.data.frame(leader_leading_nd_r)
-leader_leading_nd_r<-data.frame(leader_leading_nd_r,rep(0,5000),rep(2,5000))
-colnames(leader_leading_nd_r)<-c('r','discuss','leader')
-
-leader_leading_d_r<-as.data.frame(leader_leading_d_r)
-leader_leading_d_r<-data.frame(leader_leading_d_r,rep(1,5000),rep(2,5000))
-colnames(leader_leading_d_r)<-c('r','discuss','leader')
-
-boostrapped_r<-rbind(no_leader_nd_r,no_leader_d_r,non_leading_nd_r,non_leading_d_r,leader_leading_nd_r,leader_leading_d_r)
-boostrapped_r$r<-fisherz(boostrapped_r$r)
-boostrapped_r$discuss<-as.factor(boostrapped_r$discuss)
-boostrapped_r$leader<-as.factor(boostrapped_r$leader)
-
-boostrapped_r$discuss<-revalue(boostrapped_r$discuss,c('0'='No Discussion','1'='Discussion'))
-boostrapped_r$leader<-revalue(boostrapped_r$leader,c('0'='No Leader Group Member','1'='Non-leading Member','2'='Leader'))
-
-r_ci<-c()
-discuss_list<-unique(boostrapped_r$discuss)
-leader_list<-unique(boostrapped_r$leader)
-for (l in 1:length(leader_list)){
-  for (d in 1:length(discuss_list)){
-    tmp_data<-subset(boostrapped_r,discuss==discuss_list[d]&leader==leader_list[l])$r
-    tmp_data1<-(as.numeric(t.test(tmp_data)$conf.int))
-    r_ci<-rbind(r_ci,tmp_data1)
-  }
-}
-
-r_ci<-data.frame(r_ci,rep(c('No Discussion','Discussion'),3),c(rep('No Leader Group Member',2),rep('Non-leading Member',2),rep('Leader',2)))
-colnames(r_ci)<-c('lower_ci','upper_ci','discuss','leader')
-factor(r_ci$leader)
-factor(r_ci$discuss)
-
-ggplot(data=boostrapped_r,aes(x=discuss,y=r,fill=NULL,color=leader))+
-  geom_boxplot(notch=T,size=0.8)+
-  #geom_vline(data=r_ci,aes(xintercept = lower_ci),color='red')+
-  #geom_vline(data=r_ci,aes(xintercept = upper_ci),color='red')+
-  scale_y_continuous(expand=c(0,0))+
-  scale_color_manual(values=c('#33a02c','#a6cee3','#1f78b4'))+
-  #facet_grid(rows=vars(leader),cols=vars(discuss))+guides(fill=F)+
-  pic_theme+guides(color=F)
-
-
-ggplot(data=boostrapped_r,aes(x=r,fill=NULL,color=leader))+
-  geom_density()
-
-a<-list(subset(boostrapped_r,discuss=='No Discussion')$r,subset(boostrapped_r,discuss=='Discussion')$r)
-out<-overlap(a,plot=TRUE)
-
-b<-list(subset(boostrapped_r,leader=='No Leader Group Member')$r,subset(boostrapped_r,leader=='Non-leading Member')$r,subset(boostrapped_r,leader=='Leader')$r)
-out<-overlap(b,plot=TRUE)
+t_to_d(16.798,154)
+t_to_d(19.259,138)
 
 
 
-hdi(subset(boostrapped_r,discuss=='No Discussion')$r, credMass = 0.8)
-hdi(subset(boostrapped_r,discuss=='Discussion')$r, credMass = 0.8)
-
-hdi(subset(boostrapped_r,leader=='No Leader Group Member')$r, credMass = 0.8)
-hdi(subset(boostrapped_r,leader=='Non-leading Member')$r, credMass = 0.8)
-hdi(subset(boostrapped_r,leader=='Leader')$r, credMass = 0.8)
-
-t.test(subset(boostrapped_r,leader=='No Leader Group Member')$r)$conf.int
-t.test(subset(boostrapped_r,leader=='Non-leading Member')$r)$conf.int
-t.test(subset(boostrapped_r,leader=='Leader')$r)$conf.int
-
-
-tmp_data<-parameter_S[,c(1:5,7:10,14:17)]
-write.table(file='data_for_SEM.txt',tmp_data,row.names = F)
+##individual-group inconsistence on exploration
+  plot_raw_data2<-subset(i_data_new,inconsistence==1 & choose_to_revealed!=1)
+  plot_raw_data2<-aggregate(.~tmp_id,FUN = 'mean',data=plot_raw_data2)
+  tmp_plot_raw_data2<-data.frame(plot_raw_data2,rep(1,dim(plot_raw_data2)[1]))
+  tmp_plot_raw_data2$stay=1-tmp_plot_raw_data2$stay
+  plot_raw_data2<-data.frame(plot_raw_data2,rep(0,dim(plot_raw_data2)[1]))
+  colnames(plot_raw_data2)[c(4,10)]=c('Probability','Type')
+  colnames(tmp_plot_raw_data2)[c(4,10)]=c('Probability','Type')
+  plot_raw_data2<-rbind(plot_raw_data2,tmp_plot_raw_data2)
+  plot_raw_data2$Type=as.factor(plot_raw_data2$Type)
+#segment data
+  #no leader no discussion
+  tmp_data<-subset(plot_raw_data2, leader==0&discuss==0)
+  
+  ggplot(data=tmp_data)+
+    geom_point(aes(x=Type,y=Probability),size=10,color='skyblue',alpha=0.8)+
+    geom_line(aes(x=(Type),y=Probability,group=tmp_id),linetype='dashed',size=1,alpha=0.1)+
+    scale_x_discrete(labels=c('Stay','Switch'))+
+    pic_theme
+ 
+   t.test(subset(tmp_data,Type==0)$Probability,subset(tmp_data,Type==1)$Probability,paired = T)
+   
+   t_to_d(8.702,154)
+   t_to_d(13.033,139)
+   t_to_d(11.528,123)
+   t_to_d(10.467,111)
+##leader inconsistence ratio vs. consistence ratio
+   
+   plot_raw_data3<-subset(i_data_new,leader_choose_stay!=-1)
+   plot_raw_data3<-aggregate(.~tmp_id,FUN = 'mean',data=plot_raw_data3)
+   tmp_plot_raw_data3<-data.frame(plot_raw_data3,rep(1,dim(plot_raw_data3)[1]))
+   tmp_plot_raw_data3$leader_choose_stay=1-tmp_plot_raw_data3$leader_choose_stay
+   plot_raw_data3<-data.frame(plot_raw_data3,rep(0,dim(plot_raw_data3)[1]))
+   colnames(plot_raw_data3)[c(9,10)]=c('Probability','Type')
+   colnames(tmp_plot_raw_data3)[c(9,10)]=c('Probability','Type')
+   plot_raw_data3<-rbind(plot_raw_data3,tmp_plot_raw_data3)
+   plot_raw_data3$Type=as.factor(plot_raw_data3$Type)
+   
+   tmp_data<-subset(plot_raw_data3, leader==2&discuss==1)
+   
+   Figure2f<-ggplot(data=tmp_data)+
+     geom_point(aes(x=Type,y=Probability),size=10,color='skyblue',alpha=0.8)+
+     geom_line(aes(x=(Type),y=Probability,group=tmp_id),linetype='dashed',size=1,alpha=0.1)+
+     scale_x_discrete(labels=c('Stay','Switch'))+
+     pic_theme
+   
+   t.test(subset(tmp_data,Type==0)$Probability,subset(tmp_data,Type==1)$Probability,paired = T)
+   
+   t_to_d(7.650,30)
+   t_to_d(7.970,27)

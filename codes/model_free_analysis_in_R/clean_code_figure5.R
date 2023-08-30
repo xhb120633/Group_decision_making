@@ -28,15 +28,15 @@ n<-c(155,140,128,32,112,28)
 colnames(summary_responsibility1)[c(3,4)]=c('mean','se')
 summary_responsibility1$se<-summary_responsibility1$se/sqrt(n)
 
-Fig6A<-ggplot()+
+Fig5A<-ggplot()+
   #geom_violin(data=parameter_S,aes(x=discuss_list,y=responsibility1,fill=leader_power_list),position=position_dodge(width=0.8),alpha=0.5)+
   geom_boxplot(data=parameter_S,aes(x=discuss_list,y=responsibility1,fill=leader_power_list),position=position_dodge(width=0.8),alpha=0.5,notch=TRUE)+
   #geom_point(data=parameter_S,aes(x=discuss_list,y=responsibility1,color=leader_power_list),alpha=0.8,size=4,position=position_jitterdodge(jitter.width=0.05,dodge.width=0.8))+guides(color=FALSE)+
   #geom_point(data=summary_responsibility1,aes(x=discuss_list,y=mean,group=leader_power_list),position=position_dodge(width=0.8),size=5,alpha=0.8)+
   #geom_errorbar(data=summary_responsibility1,aes(x=discuss_list,ymin=mean-se,ymax=mean+se,group=leader_power_list),position=position_dodge(width=0.8),size=1,alpha=1,width=0.06)+
   labs(x='Discussion',y='responsibility',title='responsibility  Comparison ')+
-  scale_color_manual(values=c('#33a02c','#a6cee3','#1f78b4'),labels=c('No Leader Group','Non-Leading Member','Leader'))+
-  scale_fill_manual(values=c('#33a02c','#a6cee3','#1f78b4'),labels=c('No Leader Group','Non-Leading Member','Leader'))+
+  scale_color_manual(values=c('#91bfdb','#A8D5BA','#fc8d59'),labels=c('No Leader Group','Non-Leading Member','Leader'))+
+  scale_fill_manual(values=c('#91bfdb','#A8D5BA','#fc8d59'),labels=c('No Leader Group','Non-Leading Member','Leader'))+
   scale_x_discrete(breaks=c(0,1),labels=c('No Discussion','Discussion'))+
   scale_y_continuous(expand = c(0,0),limits=c(0,100), breaks=seq(0, 100, 20))+
   pic_theme+
@@ -50,15 +50,15 @@ n<-c(155,140,128,32,112,28)
 colnames(summary_identity1)[c(3,4)]=c('mean','se')
 summary_identity1$se<-summary_identity1$se/sqrt(n)
 
-Fig6B<-ggplot()+
+Fig5B<-ggplot()+
   #geom_violin(data=parameter_S,aes(x=discuss_list,y=identity1,fill=leader_power_list),position=position_dodge(width=0.8),alpha=0.5)+
   geom_boxplot(data=parameter_S,aes(x=discuss_list,y=identity1,fill=leader_power_list),position=position_dodge(width=0.8),alpha=0.5,notch=TRUE)+
   #geom_point(data=parameter_S,aes(x=discuss_list,y=identity1,color=leader_power_list),alpha=0.8,size=4,position=position_jitterdodge(jitter.width=0.05,dodge.width=0.8))+guides(color=FALSE)+
   #geom_point(data=summary_identity1,aes(x=discuss_list,y=mean,group=leader_power_list),position=position_dodge(width=0.8),size=5,alpha=0.8)+
   #geom_errorbar(data=summary_identity1,aes(x=discuss_list,ymin=mean-se,ymax=mean+se,group=leader_power_list),position=position_dodge(width=0.8),size=1,alpha=1,width=0.06)+
   labs(x='Discussion',y='identity',title='identity  Comparison ')+
-  scale_color_manual(values=c('#33a02c','#a6cee3','#1f78b4'),labels=c('No Leader Group','Non-Leading Member','Leader'))+
-  scale_fill_manual(values=c('#33a02c','#a6cee3','#1f78b4'),labels=c('No Leader Group','Non-Leading Member','Leader'))+
+  scale_color_manual(values=c('#91bfdb','#A8D5BA','#fc8d59'),labels=c('No Leader Group','Non-Leading Member','Leader'))+
+  scale_fill_manual(values=c('#91bfdb','#A8D5BA','#fc8d59'),labels=c('No Leader Group','Non-Leading Member','Leader'))+
   scale_x_discrete(breaks=c(0,1),labels=c('No Discussion','Discussion'))+
   scale_y_continuous(expand = c(0,0),limits=c(0,100), breaks=seq(0, 100, 20))+
   pic_theme+
@@ -137,7 +137,7 @@ Fig5C<-ggplot(data=q_p_corr,aes(x=tmp_p_label,y=tmp_r,fill=tmp_q_label))+
   theme(legend.position = c(0.9, 0.1),
         legend.title=element_blank())
 
-#可以根据fdr来看是否该标显著性
+#???愿???fdr来???欠??帽???????
 fdrtool(q_p_corr$tmp_p,statistic="pvalue")
 
 cor.test(parameter_S$responsibility1,parameter_S$identity2)
