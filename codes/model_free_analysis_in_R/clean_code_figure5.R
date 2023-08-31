@@ -129,7 +129,7 @@ for (q in 1:2){
 Fig5C<-ggplot(data=q_p_corr,aes(x=tmp_p_label,y=tmp_r,fill=tmp_q_label))+
   geom_col(width=0.5,position = position_dodge(width = 0.52))+
   geom_errorbar(aes(x=tmp_p_label,ymin=tmp_r-tmp_sd,ymax=tmp_r+tmp_sd,),width=0.3,position = position_dodge(width = 0.52))+
-  scale_fill_manual(values=c('#fc8d59','#91cf60'),labels=c('Responsibility','Identity'))+
+  scale_fill_manual(values=c('#FFCC0B','#009999'),labels=c('Responsibility','Identity'))+
   scale_x_discrete(breaks=c(1,2,3,4,5),labels=c('Sensitivity','Decay','Learning Rate','Explore Bonus','Social Weight'))+
   xlab('Parameter')+
   ylab('Correlation coefficient')+
