@@ -2,6 +2,20 @@
 library(ggplot2)
 library(R.matlab)
 library(reshape2)
+pic_theme <- theme(axis.title = element_text(face="bold", size = 45),
+                   axis.text = element_text(face="bold", size = 42),
+                   title=element_text(face='bold',size=40),
+                   legend.title = element_text(face="bold", size = 38),
+                   legend.text = element_text(face="bold", size = 38),
+                   panel.background = element_blank(),
+                   axis.line = element_line(colour = "black", size = 1),
+                   axis.ticks = element_line(size = 1),
+                   panel.grid.major.y = element_blank(),
+                   panel.grid.minor.y = element_blank(),
+                   panel.grid.major.x = element_blank(),
+                   panel.grid.minor.x = element_blank(),
+                   text = element_text(family = "sans"),
+                   legend.position = c(0.7, 0.90))
 
 #calculate mean and se
 #function preparation
@@ -148,11 +162,11 @@ simulated_choice_probability<-readMat('F:\\IGT_Data\\R\\Formal_Figures\\Figure2_
 simulated_choice_probability<-simulated_choice_probability[[1]]
 
 #real data observations
-individual_id_list<-unique(individual_data[,1])
+individual_id_list<-unique(IGT_data_individual$subNo)
 actual_choice_probability<-array(data = rep(0,length(individual_id_list)*4*100),dim=c(length(individual_id_list),4,100))
 for (i in 1:length(individual_id_list)){
-  tmp_data=individual_data[which(individual_data[,1]==individual_id_list[i]),]
-  tmp_choice=tmp_data[,11]-10
+  tmp_data=subset(IGT_data_individual,subNo==individual_id_list[i])
+  tmp_choice=tmp_data$chose_performance-10
   for(t in 1:100){
     actual_choice_probability[i,tmp_choice[t],t]=1
   }
@@ -163,7 +177,11 @@ tmp_p1<-tmp_pic_list[[1]]
 tmp_p2<-tmp_pic_list[[2]]
 
 
-##group learning-individual_decision
+
+raw_data <- read.csv("F:\\IGT_Data\\Matlab\\Simulation_Data.csv")
+
+
+##group learning-individual_decision, this generates choice probability pattern plot 
 #control
 #model_prediction
 control_sim_prob=extract_simulated_data(0,0,'s_decision')
@@ -235,3 +253,110 @@ group_mix_act_prob=extract_actual_data(1,1,'g_decision')
 tmp_pic_list<-visualize_simulation(group_mix_sim_prob,group_mix_act_prob)
 tmp_p1<-tmp_pic_list[[1]]
 tmp_p2<-tmp_pic_list[[2]]
+
+
+
+
+####quick codes to get simulation accuracy
+individual_simulation_acc<-c()
+for (i in unique(parameter_S$id_list)){
+  tmp_data=subset(parameter_S,id_list==i)
+  if (tmp_data$leader_power_list!=2){
+    tmp_real_data<-no_leader_data[which(no_leader_data[,1]==i),11]-10
+    tmp_s_data<-subset(raw_data,id==i)$s_decision
+  }else{
+    tmp_real_data<-leader_data[which(leader_data[,1]==i),11]-10
+    tmp_s_data<-subset(raw_data,id==i)$s_decision
+  }
+  tmp_acc<-length(which(tmp_s_data==tmp_real_data))/length(tmp_s_data)
+  tmp_info<-c(i,tmp_acc,tmp_data$discuss_list,tmp_data$leader_power_list)
+  individual_simulation_acc<-rbind(individual_simulation_acc,tmp_info)
+}
+
+colnames(individual_simulation_acc)<-c('id','accuracy','discuss_list','leader_power_list')
+
+
+
+
+##calculating an overall simulation accuracy for individual decisions 
+individual_simulation_acc<-as.data.frame(individual_simulation_acc)
+summary_acc<-data.frame(aggregate(accuracy~discuss_list+leader_power_list,FUN='mean',data=individual_simulation_acc),(aggregate(accuracy~discuss_list+leader_power_list,FUN='sd',data=individual_simulation_acc))[3])
+n<-c(155,140,128,32,112,28)
+colnames(summary_acc)[c(3,4)]=c('mean','se')
+summary_acc$se<-summary_acc$se/sqrt(n)
+
+individual_simulation_acc$discuss_list<-as.factor(individual_simulation_acc$discuss_list)
+individual_simulation_acc$leader_power_list<-as.factor(individual_simulation_acc$leader_power_list)
+summary_acc$discuss_list<-as.factor(summary_acc$discuss_list)
+summary_acc$leader_power_list<-as.factor(summary_acc$leader_power_list)
+
+figure_s7a<-ggplot()+
+  geom_col(data=summary_acc,aes(x=discuss_list,y=mean,fill=leader_power_list),position=position_dodge(width=0.8),alpha=0.75,width=0.7)+
+  geom_point(data=individual_simulation_acc,aes(x=discuss_list,y=accuracy,color=leader_power_list),alpha=0.8,size=4,position=position_jitterdodge(jitter.width=0.05,dodge.width=0.8))+guides(color='none')+
+  geom_errorbar(data=summary_acc,aes(x=discuss_list,ymin=mean-se,ymax=mean+se,group=leader_power_list),position=position_dodge(width=0.8),size=1,alpha=1,width=0.06)+
+  labs(x='Discussion',y='Accuracy',title='Simulation Accuracy-individual decisions ')+
+  scale_color_manual(values=c('#91bfdb','#A8D5BA','#fc8d59'),labels=c('No Leader Group','Non-Leading Member','Leader'))+
+  scale_fill_manual(values=c('#91bfdb','#A8D5BA','#fc8d59'),labels=c('No Leader Group','Non-Leading Member','Leader'))+
+  scale_x_discrete(breaks=c(0,1),labels=c('No Discussion','Discussion'))+
+  scale_y_continuous(expand = c(0,0),limits=c(0,1), breaks=seq(0, 1, 0.2))+
+  pic_theme+
+  theme(legend.position = c(0.9, 0.97),
+        legend.title=element_blank())
+
+
+
+
+
+####quick codes to get group decision accuracy
+##for this simulation data, the group decisions are copied from the original data, so we need to 
+#transform the group decision data into a simulation context that is majority rule (note that, the simulated group decision is not used recovery )
+group_simulation_acc<-c()
+for (i in 1:dim(group_tag)[1]){
+  tmp_data=subset(parameter_S,id_list==group_tag[i,5])
+  if (tmp_data$leader_power_list==0){
+    tmp_sub_data = c()
+    for (s in 1:5){
+      tmp_sub_choice_data<-no_leader_data[which(no_leader_data[,1]==group_tag[i,s]),11]-10
+      tmp_sub_data <- rbind(tmp_sub_data,tmp_sub_choice_data)
+    }
+    tmp_real_data = rep(-999,100)
+    for(t in 1:100){
+      tmp_real_data[t] = group_majority(tmp_sub_data[,t])
+    }
+    tmp_s_data<-subset(raw_data,id==group_tag[i,5])$g_decision
+  }else{
+    tmp_real_data<-leader_data[which(leader_data[,1]==group_tag[i,5]),16]-10
+    tmp_s_data<-subset(raw_data,id==group_tag[i,5])$g_decision
+  }
+  tmp_acc<-length(which(tmp_s_data==tmp_real_data))/length(tmp_s_data)
+  tmp_info<-c(i,tmp_acc,tmp_data$discuss_list,tmp_data$leader_power_list)
+  group_simulation_acc<-rbind(group_simulation_acc,tmp_info)
+}
+
+colnames(group_simulation_acc)<-c('id','accuracy','discuss_list','leader_power_list')
+
+
+##calculating an overall simulation accuracy for individual decisions 
+group_simulation_acc<-as.data.frame(group_simulation_acc)
+summary_acc<-data.frame(aggregate(accuracy~discuss_list+leader_power_list,FUN='mean',data=group_simulation_acc),(aggregate(accuracy~discuss_list+leader_power_list,FUN='sd',data=group_simulation_acc))[3])
+n<-c(31,28,31,28)
+colnames(summary_acc)[c(3,4)]=c('mean','se')
+summary_acc$se<-summary_acc$se/sqrt(n)
+
+group_simulation_acc$discuss_list<-as.factor(group_simulation_acc$discuss_list)
+group_simulation_acc$leader_power_list<-as.factor(group_simulation_acc$leader_power_list)
+summary_acc$discuss_list<-as.factor(summary_acc$discuss_list)
+summary_acc$leader_power_list<-as.factor(summary_acc$leader_power_list)
+
+figure_s7b<-ggplot()+
+  geom_col(data=summary_acc,aes(x=discuss_list,y=mean,fill=leader_power_list),position=position_dodge(width=0.8),alpha=0.75,width=0.7)+
+  geom_point(data=group_simulation_acc,aes(x=discuss_list,y=accuracy,color=leader_power_list),alpha=0.8,size=4,position=position_jitterdodge(jitter.width=0.05,dodge.width=0.8))+guides(color='none')+
+  geom_errorbar(data=summary_acc,aes(x=discuss_list,ymin=mean-se,ymax=mean+se,group=leader_power_list),position=position_dodge(width=0.8),size=1,alpha=1,width=0.06)+
+  labs(x='Discussion',y='Accuracy',title='Simulation Accuracy-individual decisions ')+
+  scale_color_manual(values=c('#91bfdb','#fc8d59'),labels=c('No Leader Group','Leader Group'))+
+  scale_fill_manual(values=c('#91bfdb','#fc8d59'),labels=c('No Leader Group','Leader Group'))+
+  scale_x_discrete(breaks=c(0,1),labels=c('No Discussion','Discussion'))+
+  scale_y_continuous(expand = c(0,0),limits=c(0,1), breaks=seq(0, 1, 0.2))+
+  pic_theme+
+  theme(legend.position = c(0.9, 0.97),
+        legend.title=element_blank())
