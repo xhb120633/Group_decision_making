@@ -98,5 +98,5 @@ end
 end
 
 function s = sumall(z)
-    s = nansum (nansum (z));
+    s = sum (sum (z));
 end

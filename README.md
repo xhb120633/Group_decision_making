@@ -31,5 +31,5 @@ The behavioral data, along with a complete set of model fitting results, can be 
 For technical questions or further clarifications, please reach out to:
 
 **Hanbo Xie**  
-Email: [hanboxie1997@arizona.edu](mailto:hanboxie1997@arizona.edu)
+Email: [hanboxie1997@gatech.edu](mailto:hanboxie1997@gatech.edu)
 
