@@ -313,7 +313,7 @@ individual_block_standard_score<-subset(individual_block_standard_score,leader!=
 ##plot figure2d
 Figure_s2b<-ggplot(data = individual_block_standard_score, aes(x = block,y = individual_performance)) + 
   geom_line(aes(color=leader, linetype=discuss),size=1.5,alpha=1)+
-  scale_linetype_manual(values=c('solid','dashed','solid'),labels = c("0" = "No Discussion", "1" = "Discussion"))+
+  scale_linetype_manual(values=c('dashed','solid'),labels = c("0" = "No Discussion", "1" = "Discussion"))+
   scale_color_manual(values=c('#91bfdb','#A8D5BA','#fc8d59'),labels=c("0" = "No Leader", "1" = "Non-leading Member",'2'='Leader'))+
   scale_x_continuous( breaks=seq(0, 10, 2))+
   #scale_y_continuous( breaks=seq(-6, 6, 3))+

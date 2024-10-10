@@ -21,14 +21,14 @@ pic_theme <- theme(axis.title = element_text(face="bold", size = 45),
                    legend.title = element_text(face="bold", size = 38),
                    legend.text = element_text(face="bold", size = 38),
                    panel.background = element_blank(),
-                   axis.line = element_line(colour = "black", size = 1),
+                   axis.line = element_line(colour = "black", linewidth = 1),
                    axis.ticks = element_line(size = 1),
                    panel.grid.major.y = element_blank(),
                    panel.grid.minor.y = element_blank(),
                    panel.grid.major.x = element_blank(),
                    panel.grid.minor.x = element_blank(),
                    text = element_text(family = "sans"),
-                   legend.position = c(0.92, 0.90))
+                   legend.position.inside = c(0.92, 0.90))
 
 #function preparation
 cor.diff.test = function(x1, x2, y1, y2, method="pearson") {

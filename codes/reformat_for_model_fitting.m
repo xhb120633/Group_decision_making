@@ -30,7 +30,7 @@ for i=1:length(id_list)
     reformat_data{i}.rt=tmp_data(:,4);
     reformat_data{i}.total_score=sum(reformat_data{i}.win+reformat_data{i}.lose);
 end
-individual_data=reformat_data;
+data=reformat_data;
 
 %no leader data reformat (modify the code to get various conditions of
 %data)
@@ -108,6 +108,23 @@ for i=1:length(id_list)
 end
 group_leaderL_data=reformat_data;
 %group_mixL_data=reformat_data;
+
+
+%LLM data
+data = readtable('data_GPT4_o.csv');
+id_list=unique(data(:,1));
+reformat_data=cell(height(id_list),1);
+for i=1:height(id_list)
+    tmp_data=data(find(data(:,1)==id_list(i,1)),:);
+    reformat_data{i}.id=id_list(i,1);
+    reformat_data{i}.cond_label = 'LLM';
+    reformat_data{i}.trial=tmp_data(:,2);
+    reformat_data{i}.deck=tmp_data(:,6)-10;
+    reformat_data{i}.win=tmp_data(:,3);
+    reformat_data{i}.lose=tmp_data(:,4);
+end
+data=reformat_data;
+
 
 %%note: to finally run the code IGTtoolbox2_Fitmodels.m, you should:
 %1. name your intended variable (e.g., group_leader_L_data) as data (which means run
