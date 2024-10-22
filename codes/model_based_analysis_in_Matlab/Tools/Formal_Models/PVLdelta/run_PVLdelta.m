@@ -1,4 +1,4 @@
-function [A R] = run_EV(A, data)
+function [A R] = run_PVLdelta(A, data)
 %%%% PVL model / Evolution function
 % This model is well described in Steingroever, Wetzels, Wagenmakers 2016
 % 'Bayes Factors for Reinforcement-Learning Models of the IowaGambling Task'
@@ -23,17 +23,17 @@ switch A.fit.priors.type
 
     case 'flat' % use strictly bounded priors (flatness imperfect)
 
-        priors.muPhi = zeros(1,dim.n_phi);
+        priors.muPhi = zeros(1,dim.n_phi)';
         priors.SigmaPhi = 3e0*eye(dim.n_phi);
-        priors.muTheta = zeros(1,dim.n_theta);
+        priors.muTheta = zeros(1,dim.n_theta)';
         priors.SigmaTheta = 3e0*eye(dim.n_theta);
         priors.muX0(1:4,1) = [0 0 0 0];
 
         Traw = @(x) x;
-        Tsig = @sig;
+        Tsig = @(x) VBA_sigmoid(x);
         Texp = @exp;
-        Tsig0to5 = @(x) sig(x)*5;
-        TsigMin2to2 = @(x) sig(x)*4-2;
+        Tsig0to5 = @(x) VBA_sigmoid(x)*5;
+        TsigMin2to2 = @(x) VBA_sigmoid(x)*4-2;
 
     case 'informed' % use priors derived from firstpass
 

@@ -1,4 +1,4 @@
-function [A R] = run_EXPLORE(A, data)
+function [A R] = run_VSE_LA(A, data)
 %%%% EXPLORE model
 % This model is related to the forgetting PVL model except that:
 % - It does not use a loss aversion parameter and instead assumes a
@@ -45,18 +45,18 @@ switch A.fit.priors.type
         % second-pass might then be used, corresponding to an empirical
         % Bayes approach (priors derived from the data)
 
-        priors.muPhi = zeros(1,dim.n_phi);
+        priors.muPhi = zeros(1,dim.n_phi)';
         priors.SigmaPhi = 3e0*eye(dim.n_phi);
-        priors.muTheta = zeros(1,dim.n_theta);
+        priors.muTheta = zeros(1,dim.n_theta)';
         priors.SigmaTheta = 3e0*eye(dim.n_theta);
         priors.muX0(1:8,1) = [0 0 0 0 1 1 1 1];%hs.initval;
 
         Traw = @(x) x;
-        Tsig = @sig;
+        Tsig = @(x) VBA_sigmoid(x);
         Texp = @exp;
-        Tsig0to5 = @(x) sig(x)*5;
-        TsigMin10to10 = @(x) -10+sig(x)*20;
-        TsigMin2to2 = @(x) sig(x)*4-2;
+        Tsig0to5 = @(x) VBA_sigmoid(x)*5;
+        TsigMin10to10 = @(x) -10+VBA_sigmoid(x)*20;
+        TsigMin2to2 = @(x) VBA_sigmoid(x)*4-2;
 
 
     case 'informed'
