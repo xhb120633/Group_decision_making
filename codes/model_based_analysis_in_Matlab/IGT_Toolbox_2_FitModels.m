@@ -15,7 +15,7 @@ clear all;close all;
 % unexperienced with computational modeling will modify.
 
 % 1) Models that the toolbox is going to fit to your data
-A.fit.models={@run_VSE_LA, @run_VPP, @run_PVLdelta, @run_PVL, @run_ORL};
+A.fit.models={@run_VSE_LA, @run_VPP, @run_PVLdelta, @run_PVL, @run_ORL,@run_EV};
 %A.fit.models ={@run_M2,@run_M2b,@run_M2c,@run_M2d,@run_M3,@run_M3b,@run_M3c,@run_M3d,@run_M4,@run_M4b,@run_M4c,@run_M4d,@run_M5,@run_M5b,@run_M6,@run_M6b};%{@run_B_M3e,@run_B_M3f,@run_B_M3g,@run_B_M4,@run_B_M4c,@run_B_M4d,@run_B_M4e,@run_B_M4f,@run_B_M5,@run_B_M5b,@run_B_M5c,@run_B_M6,@run_B_M6b};%{@run_B_VSE_decay,@run_B_VSE_explor,@run_B_VSE_ed};%{@run_B_M2b,@run_B_M2,@run_B_M2c,@run_B_M2d};%{@run_M6d,@run_M6e,@run_M3f,@run_M4b,@run_M4c,@run_M4d};%{@run_B_M4c, @run_B_M3e, @run_B_M3c,@run_B_M3d,  @run_B_M3,@run_B_M3b,@run_B_M2,@run_B_M2b @run_B_VSE};%{@run_B_M7b, @run_B_M7,@run_B_M6,@run_B_M6b,  @run_B_M5, @run_B_M5b, @run_B_M4,@run_B_M4b};%{@run_M5ci};%{@run_M2d,@run_M3e,@run_M5cc};%{@run_M5cL};%@run_M5c,@run_M5d,@run_M3c,@run_M3d,@run_VSE,@run_M2,@run_M2b,@run_M2c,@run_M3,@run_M3d,@run_M4,@run_M5,@run_M6};%, @run_PVL, @run_PVLdelta, @run_VPP, @run_VSE_LA, @run_ORL, @run_EV};
 %A.fit.models ={@run_M6eb};
 % 2) Types of priors to be used: 'informed','flat' or 'shrinkage'
